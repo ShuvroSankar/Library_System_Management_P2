@@ -561,8 +561,3 @@ This project demonstrates the application of SQL skills in creating and managing
 ## Author - Shuvro Sankar
 
 
-
-Thank you for your interest in this project!
-# Library_System_Management_P2
-# Library_System_Management_P2
-# Library_System_Management_P2
