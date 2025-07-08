@@ -8,7 +8,7 @@
 
 This project demonstrates the implementation of a Library Management System using SQL. It includes creating and managing tables, performing CRUD operations, and executing advanced SQL queries. The goal is to showcase skills in database design, manipulation, and querying.
 
-![Library_project](https://github.com/najirh/Library-System-Management---P2/blob/main/library.jpg)
+![Library_project](https://github.com/ShuvroSankar/Library_System_Management_P2/blob/main/library-slider.jpg)
 
 ## Objectives
 
@@ -20,7 +20,7 @@ This project demonstrates the implementation of a Library Management System usin
 ## Project Structure
 
 ### 1. Database Setup
-![ERD](https://github.com/najirh/Library-System-Management---P2/blob/main/library_erd.png)
+![ERD](https://github.com/ShuvroSankar/Library_System_Management_P2/blob/main/EDM%202.png)
 
 - **Database Creation**: Created a database named `library_db`.
 - **Table Creation**: Created tables for branches, employees, members, books, issued status, and return status. Each table includes relevant columns and relationships.
@@ -188,22 +188,44 @@ WHERE category = 'Classic';
 8. **Task 8: Find Total Rental Income by Category**:
 
 ```sql
-SELECT 
-    b.category,
-    SUM(b.rental_price),
-    COUNT(*)
-FROM 
-issued_status as ist
-JOIN
-books as b
-ON b.isbn = ist.issued_book_isbn
+SELECT b.category,SUM(b.rental_price)
+FROM books as b
+INNER JOIN issued_status as i
+ON b.isbn = i.issued_book_isbn
 GROUP BY 1
 ```
 
 9. **List Members Who Registered in the Last 180 Days**:
 ```sql
+SELECT  member_id, member_name, reg_date
+FROM members
+WHERE reg_date <= (
+SELECT MAX(reg_date) - INTERVAL '180 days' FROM members 
+)
+ORDER BY  3 DESC
+-- Using Current_Date
 SELECT * FROM members
 WHERE reg_date >= CURRENT_DATE - INTERVAL '180 days';
+
+INSERT INTO members (member_id, member_name, member_address, reg_date) VALUES
+('C125', 'sam', '145 Main St', '2025-07-08'),
+('C126', 'john', '133 Main St', '2024-07-08');
+-- Task 10: List Employees with Their Branch Manager's Name and their branch details:
+
+SELECT 
+    e1.emp_id,
+    e1.emp_name,
+    e1.position,
+    e1.salary,
+    b.*,
+    e2.emp_name as manager
+FROM employees as e1
+JOIN 
+branch as b
+ON e1.branch_id = b.branch_id    
+JOIN
+employees as e2
+ON e2.emp_id = b.manager_id
 ```
 
 10. **List Employees with Their Branch Manager's Name and their branch details**:
@@ -372,17 +394,21 @@ Use the CREATE TABLE AS (CTAS) statement to create a new table active_members co
 
 ```sql
 
-CREATE TABLE active_members
-AS
-SELECT * FROM members
-WHERE member_id IN (SELECT 
-                        DISTINCT issued_member_id   
-                    FROM issued_status
-                    WHERE 
-                        issued_date >= CURRENT_DATE - INTERVAL '2 month'
-                    )
-;
+DROP TABLE IF EXISTS active_members;
 
+CREATE TABLE active_members AS
+SELECT * 
+FROM members
+WHERE member_id IN (
+    SELECT DISTINCT issued_member_id
+    FROM issued_status
+    WHERE issued_date >= (
+        SELECT MAX(issued_date) - INTERVAL '2 months'
+        FROM issued_status
+    )
+);
+
+-- View the new table
 SELECT * FROM active_members;
 
 ```
@@ -408,7 +434,20 @@ GROUP BY 1, 2
 
 **Task 18: Identify Members Issuing High-Risk Books**  
 Write a query to identify members who have issued books more than twice with the status "damaged" in the books table. Display the member name, book title, and the number of times they've issued damaged books.    
+```sql
 
+SELECT 
+    m.member_name,
+    i.issued_book_name AS book_title,
+    COUNT(*) AS times_issued_damaged
+FROM return_status r
+JOIN issued_status i ON r.issued_id = i.issued_id
+JOIN members m ON i.issued_member_id = m.member_id
+WHERE r.book_quality = 'Damaged'
+GROUP BY m.member_name, i.issued_book_name
+HAVING COUNT(*) > 2;
+
+```
 
 **Task 19: Stored Procedure**
 Objective:
@@ -487,6 +526,24 @@ Description: Write a CTAS query to create a new table that lists each member and
     Number of overdue books
     Total fines
 
+```sql
+
+CREATE TABLE overdue_fines_summary AS
+SELECT 
+    m.member_id,
+    COUNT(CASE WHEN (r.return_date - i.issued_date) > 30 THEN 1 END) AS overdue_books,
+    SUM(CASE 
+            WHEN (r.return_date - i.issued_date) > 30 
+            THEN (r.return_date - i.issued_date - 30) * 0.50
+            ELSE 0
+        END) AS total_fines,
+    COUNT(i.issued_id) AS total_books_issued
+FROM members m
+LEFT JOIN issued_status i ON m.member_id = i.issued_member_id
+LEFT JOIN return_status r ON i.issued_id = r.issued_id
+GROUP BY m.member_id;
+
+```
 
 
 ## Reports
@@ -499,25 +556,11 @@ Description: Write a CTAS query to create a new table that lists each member and
 
 This project demonstrates the application of SQL skills in creating and managing a library management system. It includes database setup, data manipulation, and advanced querying, providing a solid foundation for data management and analysis.
 
-## How to Use
 
-1. **Clone the Repository**: Clone this repository to your local machine.
-   ```sh
-   git clone https://github.com/najirh/Library-System-Management---P2.git
-   ```
 
-2. **Set Up the Database**: Execute the SQL scripts in the `database_setup.sql` file to create and populate the database.
-3. **Run the Queries**: Use the SQL queries in the `analysis_queries.sql` file to perform the analysis.
-4. **Explore and Modify**: Customize the queries as needed to explore different aspects of the data or answer additional questions.
+## Author - Shuvro Sankar
 
-## Author - Zero Analyst
 
-This project showcases SQL skills essential for database management and analysis. For more content on SQL and data analysis, connect with me through the following channels:
-
-- **YouTube**: [Subscribe to my channel for tutorials and insights](https://www.youtube.com/@zero_analyst)
-- **Instagram**: [Follow me for daily tips and updates](https://www.instagram.com/zero_analyst/)
-- **LinkedIn**: [Connect with me professionally](https://www.linkedin.com/in/najirr)
-- **Discord**: [Join our community for learning and collaboration](https://discord.gg/36h5f2Z5PK)
 
 Thank you for your interest in this project!
 # Library_System_Management_P2
